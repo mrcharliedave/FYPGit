@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4027532465886988122}
   - component: {fileID: 4027532465886988121}
   - component: {fileID: 4251314518920140626}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: GenBlock
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mLock: 0
-  mStairs: 0
+  mLevelAccess: 1
   mOverideGlobalClutter: 0
   mUseClutter: 0
   mCurrentFloorLevel: 0

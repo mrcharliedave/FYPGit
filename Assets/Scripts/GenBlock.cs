@@ -17,9 +17,9 @@ public enum GenBlock2DSpacialProperties : int
 
 public enum GenBlockLevelSpacialProperties
 {
-    NONE = (1 << 0),
-    UP = (1 << 1),
-    DOWN = (1 << 2),
+    NONE = 0,
+    UP = 1,
+    DOWN = 2
 }
 
 public struct SpacialData
@@ -65,6 +65,9 @@ public class GenBlock : MonoBehaviour
     public SpacialData mSpacialData;
 
     private List<List<GenBlock2DSpacialProperties>> mRoomRotations;
+
+    // Maybe set neighbours and do it this way??
+    private GenBlock[,,] mNeighbours;
 
     private void OnDestroy()
     {
@@ -130,23 +133,25 @@ public class GenBlock : MonoBehaviour
         // Reset spacial data
         mSpacialData.mProperties = 0;
 
-        // Cast out to find neighbours
-        // #TODO - this is very sloppy but it works, need to update more frequently though
-        if (Physics.Raycast(transform.position, Vector3.left, mGenerationManager.mGridSize / 2))
+        // Cast out to find neighbours on the correct collision layer.
+        int layerMask = 1 << 9;
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, Vector3.left, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
             mSpacialData.mProperties |= GenBlock2DSpacialProperties.LEFT;
         }
-        if (Physics.Raycast(transform.position, Vector3.right, mGenerationManager.mGridSize / 2))
+        if (Physics.Raycast(transform.position, Vector3.right, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
             mSpacialData.mProperties |= GenBlock2DSpacialProperties.RIGHT;
         }
-        if (Physics.Raycast(transform.position, Vector3.forward, mGenerationManager.mGridSize / 2))
+        if (Physics.Raycast(transform.position, Vector3.forward, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
             mSpacialData.mProperties |= GenBlock2DSpacialProperties.FORWARD;
         }
-        if (Physics.Raycast(transform.position, Vector3.back, mGenerationManager.mGridSize / 2))
+        if (Physics.Raycast(transform.position, Vector3.back, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
             mSpacialData.mProperties |= GenBlock2DSpacialProperties.BACK;
+            hit.transform.GetComponent<GenBlock>();
         }
 
         // Set isolated if we are
