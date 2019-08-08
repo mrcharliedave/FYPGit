@@ -51,7 +51,8 @@ public class GenBlockGui : Editor
         GUILayout.Space(5);
 
         GUILayout.BeginHorizontal();
-        serializedObject.FindProperty("mStairs").boolValue = GUILayout.Toggle(myBlock.mStairs, "Dedicated Stair Block");
+        GenBlockLevelSpacialProperties prop = (GenBlockLevelSpacialProperties)EditorGUILayout.EnumPopup("Level Access", (GenBlockLevelSpacialProperties)serializedObject.FindProperty("mLevelAccess").enumValueIndex); //???
+        serializedObject.FindProperty("mLevelAccess").enumValueIndex = (int)prop;
 
         GUILayout.Space(10);
 

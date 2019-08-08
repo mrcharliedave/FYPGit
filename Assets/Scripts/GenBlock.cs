@@ -4,22 +4,28 @@ using UnityEngine;
 using UnityEditor;
 
 // #CM -    This script handles the logic attached to our GenBlocks. These are the literal building blocks of our environment,
-//          they will be responcible for managing themselves and reporting to the Generation Manager
+//          they will be responsible for managing themselves and reporting to the Generation Manager
 
 [System.Flags]
-public enum GenBlockSpacialProperties : int
+public enum GenBlock2DSpacialProperties : int
 {
     LEFT    = (1 << 0),
     RIGHT   = (1 << 1),
     FORWARD = (1 << 2),
     BACK    = (1 << 3),
-    UP      = (1 << 4),
-    DOWN    = (1 << 5)
+}
+
+public enum GenBlockLevelSpacialProperties
+{
+    NONE = (1 << 0),
+    UP = (1 << 1),
+    DOWN = (1 << 2),
 }
 
 public struct SpacialData
 {
-    public GenBlockSpacialProperties mProperties;
+    public GenBlock2DSpacialProperties mProperties;
+    public GenBlockLevelSpacialProperties mLevelAccess;
     public bool mIsolated;
 }
 
@@ -44,13 +50,13 @@ public class GenBlock : MonoBehaviour
     [Header("General Settings")]
     public bool mLock;
 
-    [Tooltip("This block will specifically contain access stairs")]
-    public bool mStairs;
+    [Tooltip("This block will specifically contain access stairs. Depending on this setting, the blocks above or below could be altered.")]
+    public GenBlockLevelSpacialProperties mLevelAccess = GenBlockLevelSpacialProperties.NONE;
 
     [Header("Clutter Settings")]
     public bool mOverideGlobalClutter;
 
-    [Tooltip("Controls how much clutter is allowed in this specific block")]
+    [Tooltip("Controls how much clutter is allowed in this specific block.")]
     public bool mUseClutter;
 
     [HideInInspector]
@@ -58,7 +64,7 @@ public class GenBlock : MonoBehaviour
 
     public SpacialData mSpacialData;
 
-    private List<List<GenBlockSpacialProperties>> mRoomRotations;
+    private List<List<GenBlock2DSpacialProperties>> mRoomRotations;
 
     private void OnDestroy()
     {
@@ -128,27 +134,19 @@ public class GenBlock : MonoBehaviour
         // #TODO - this is very sloppy but it works, need to update more frequently though
         if (Physics.Raycast(transform.position, Vector3.left, mGenerationManager.mGridSize / 2))
         {
-            mSpacialData.mProperties |= GenBlockSpacialProperties.LEFT;
+            mSpacialData.mProperties |= GenBlock2DSpacialProperties.LEFT;
         }
         if (Physics.Raycast(transform.position, Vector3.right, mGenerationManager.mGridSize / 2))
         {
-            mSpacialData.mProperties |= GenBlockSpacialProperties.RIGHT;
+            mSpacialData.mProperties |= GenBlock2DSpacialProperties.RIGHT;
         }
         if (Physics.Raycast(transform.position, Vector3.forward, mGenerationManager.mGridSize / 2))
         {
-            mSpacialData.mProperties |= GenBlockSpacialProperties.FORWARD;
+            mSpacialData.mProperties |= GenBlock2DSpacialProperties.FORWARD;
         }
         if (Physics.Raycast(transform.position, Vector3.back, mGenerationManager.mGridSize / 2))
         {
-            mSpacialData.mProperties |= GenBlockSpacialProperties.BACK;
-        }
-        if (Physics.Raycast(transform.position, Vector3.up, mGenerationManager.mGridSize / 2))
-        {
-            mSpacialData.mProperties |= GenBlockSpacialProperties.UP;
-        }
-        if (Physics.Raycast(transform.position, Vector3.down, mGenerationManager.mGridSize / 2))
-        {
-            mSpacialData.mProperties |= GenBlockSpacialProperties.DOWN;
+            mSpacialData.mProperties |= GenBlock2DSpacialProperties.BACK;
         }
 
         // Set isolated if we are
@@ -171,34 +169,34 @@ public class GenBlock : MonoBehaviour
     private void SetupRoomRotations()
     {
         // Add rotations in a clockwise manner
-        mRoomRotations = new List<List<GenBlockSpacialProperties>>();
-        List<GenBlockSpacialProperties> OneFlatConnection = new List<GenBlockSpacialProperties>();
-        List<GenBlockSpacialProperties> LineConnection = new List<GenBlockSpacialProperties>();
-        List<GenBlockSpacialProperties> TwoFlatConnection = new List<GenBlockSpacialProperties>();
-        List<GenBlockSpacialProperties> ThreeFlatConnection = new List<GenBlockSpacialProperties>();
+        mRoomRotations = new List<List<GenBlock2DSpacialProperties>>();
+        List<GenBlock2DSpacialProperties> OneFlatConnection = new List<GenBlock2DSpacialProperties>();
+        List<GenBlock2DSpacialProperties> LineConnection = new List<GenBlock2DSpacialProperties>();
+        List<GenBlock2DSpacialProperties> TwoFlatConnection = new List<GenBlock2DSpacialProperties>();
+        List<GenBlock2DSpacialProperties> ThreeFlatConnection = new List<GenBlock2DSpacialProperties>();
 
         // If we have 1 entrance, the room matches, just apply a rotation, 4 types
-        OneFlatConnection.Add(GenBlockSpacialProperties.FORWARD);
-        OneFlatConnection.Add(GenBlockSpacialProperties.RIGHT);
-        OneFlatConnection.Add(GenBlockSpacialProperties.BACK);
-        OneFlatConnection.Add(GenBlockSpacialProperties.LEFT);
+        OneFlatConnection.Add(GenBlock2DSpacialProperties.FORWARD);
+        OneFlatConnection.Add(GenBlock2DSpacialProperties.RIGHT);
+        OneFlatConnection.Add(GenBlock2DSpacialProperties.BACK);
+        OneFlatConnection.Add(GenBlock2DSpacialProperties.LEFT);
 
         // If we have 2 entrances
         // If the entrances are adjacent, rotate, 2 types
-        LineConnection.Add(GenBlockSpacialProperties.FORWARD | GenBlockSpacialProperties.BACK);
-        LineConnection.Add(GenBlockSpacialProperties.LEFT | GenBlockSpacialProperties.RIGHT);
+        LineConnection.Add(GenBlock2DSpacialProperties.FORWARD | GenBlock2DSpacialProperties.BACK);
+        LineConnection.Add(GenBlock2DSpacialProperties.LEFT | GenBlock2DSpacialProperties.RIGHT);
 
         // If entrances are next to each other, rotate, 4 types
-        TwoFlatConnection.Add(GenBlockSpacialProperties.FORWARD | GenBlockSpacialProperties.RIGHT);
-        TwoFlatConnection.Add(GenBlockSpacialProperties.RIGHT | GenBlockSpacialProperties.BACK);
-        TwoFlatConnection.Add(GenBlockSpacialProperties.BACK | GenBlockSpacialProperties.LEFT);
-        TwoFlatConnection.Add(GenBlockSpacialProperties.LEFT | GenBlockSpacialProperties.FORWARD);
+        TwoFlatConnection.Add(GenBlock2DSpacialProperties.FORWARD | GenBlock2DSpacialProperties.RIGHT);
+        TwoFlatConnection.Add(GenBlock2DSpacialProperties.RIGHT | GenBlock2DSpacialProperties.BACK);
+        TwoFlatConnection.Add(GenBlock2DSpacialProperties.BACK | GenBlock2DSpacialProperties.LEFT);
+        TwoFlatConnection.Add(GenBlock2DSpacialProperties.LEFT | GenBlock2DSpacialProperties.FORWARD);
 
         // if we have 3 entrances are next to each other, rotate, 4 types
-        ThreeFlatConnection.Add(GenBlockSpacialProperties.FORWARD | GenBlockSpacialProperties.RIGHT | GenBlockSpacialProperties.BACK);
-        ThreeFlatConnection.Add(GenBlockSpacialProperties.RIGHT | GenBlockSpacialProperties.BACK | GenBlockSpacialProperties.LEFT);
-        ThreeFlatConnection.Add(GenBlockSpacialProperties.BACK | GenBlockSpacialProperties.LEFT | GenBlockSpacialProperties.FORWARD);
-        ThreeFlatConnection.Add(GenBlockSpacialProperties.LEFT | GenBlockSpacialProperties.FORWARD | GenBlockSpacialProperties.RIGHT);
+        ThreeFlatConnection.Add(GenBlock2DSpacialProperties.FORWARD | GenBlock2DSpacialProperties.RIGHT | GenBlock2DSpacialProperties.BACK);
+        ThreeFlatConnection.Add(GenBlock2DSpacialProperties.RIGHT | GenBlock2DSpacialProperties.BACK | GenBlock2DSpacialProperties.LEFT);
+        ThreeFlatConnection.Add(GenBlock2DSpacialProperties.BACK | GenBlock2DSpacialProperties.LEFT | GenBlock2DSpacialProperties.FORWARD);
+        ThreeFlatConnection.Add(GenBlock2DSpacialProperties.LEFT | GenBlock2DSpacialProperties.FORWARD | GenBlock2DSpacialProperties.RIGHT);
 
         mRoomRotations.Add(OneFlatConnection);
         mRoomRotations.Add(LineConnection);
@@ -214,11 +212,33 @@ public class GenBlock : MonoBehaviour
 
     public List<RoomAndRotation> GetAvailableRooms()
     {
+        // Set up our room list
         List<RoomAndRotation> rooms = new List<RoomAndRotation>();
 
-        for(int i = 0; i < mGenerationManager.mEnvironmentDatabase.mRooms.Count; i++)
+        // Grab our correct Room Pool
+        List<GameObject> roomPool = new List<GameObject>();
+        switch (mSpacialData.mLevelAccess)
         {
-            Room room = mGenerationManager.mEnvironmentDatabase.mRooms[i].GetComponent<Room>();
+            case GenBlockLevelSpacialProperties.NONE:
+                {
+                    roomPool = mGenerationManager.mEnvironmentDatabase.mRooms;
+                }
+                break;
+            case GenBlockLevelSpacialProperties.DOWN:
+                {
+                    roomPool = mGenerationManager.mEnvironmentDatabase.mDownAccessRooms;
+                }
+                break;
+            case GenBlockLevelSpacialProperties.UP:
+                {
+                    roomPool = mGenerationManager.mEnvironmentDatabase.mUpAccessRooms;
+                }
+                break;
+        }
+
+        for(int i = 0; i < roomPool.Count; i++)
+        {
+            Room room = roomPool[i].GetComponent<Room>();
 
             if (room.mSpacialProperties == mSpacialData.mProperties)
             {
@@ -240,7 +260,7 @@ public class GenBlock : MonoBehaviour
     }
 
     // Returns an int that details how much we have to rotate by if we have a match. If the min int is returned, no match.
-    private int FindRoomRotations(GenBlockSpacialProperties room, GenBlockSpacialProperties prefab)
+    private int FindRoomRotations(GenBlock2DSpacialProperties room, GenBlock2DSpacialProperties prefab)
     {
         // Check each pattern
         for(int i = 0; i < mRoomRotations.Count; i++)

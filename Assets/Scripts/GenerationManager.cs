@@ -39,6 +39,8 @@ public class GenerationManager : MonoBehaviour
     private GameObject mEnvironmentParent;
 
     private List<GameObject> mFloorParents;
+
+    private RoomGenerationInfo[,,] mGridRoomInfo;
     
     void Update()
     {
@@ -143,13 +145,18 @@ public class GenerationManager : MonoBehaviour
             mFloorParents[i].transform.position = new Vector3(0, (i * mMaxGenBlockSize) - (mMaxGenBlockSize / 2), 0);
         }
 
+        GenerateMap();
+    }
+
+    private bool GenerateMap()
+    {
         // Generate Map
         int currentStairCount = 0;
         GenBlock[] currentBlocks = null;
         foreach (GenBlock block in mGenBlocks)
         {
             // Don't generate the terrain for Isolated GenBlocks
-            if(block.mSpacialData.mIsolated)
+            if (block.mSpacialData.mIsolated)
             {
                 continue;
             }
@@ -157,18 +164,20 @@ public class GenerationManager : MonoBehaviour
             block.transform.SetParent(mFloorParents[block.mCurrentFloorLevel].transform);
             RoomAndRotation room = block.GetRandomRoom();
 
-            if(room.mRoom != null)
+            if (room.mRoom != null)
             {
                 GameObject roomObject = Instantiate(room.mRoom);
                 roomObject.transform.parent = block.transform;
                 roomObject.transform.localPosition = Vector3.zero;
 
-                if(room.mRotateOnY != 0)
+                if (room.mRotateOnY != 0)
                 {
                     roomObject.transform.rotation *= Quaternion.Euler(0, room.mRotateOnY, 0);
                 }
             }
         }
+
+        return true;
     }
 
     private void AddGenBlock()

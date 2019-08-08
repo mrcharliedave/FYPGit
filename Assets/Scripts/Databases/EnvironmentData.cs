@@ -6,4 +6,6 @@ using UnityEngine;
 public class EnvironmentData : ScriptableObject
 {
     public List<GameObject> mRooms;
+    public List<GameObject> mUpAccessRooms;
+    public List<GameObject> mDownAccessRooms;
 }
