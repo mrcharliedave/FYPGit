@@ -217,6 +217,9 @@ public class GenBlock : MonoBehaviour
 
     public List<RoomAndRotation> GetAvailableRooms()
     {
+        // Refresh our spacial properties before generation
+        UpdateSpacialProperties();
+
         // Set up our room list
         List<RoomAndRotation> rooms = new List<RoomAndRotation>();
 

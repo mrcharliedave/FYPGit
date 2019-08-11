@@ -136,7 +136,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mSpacialProperties: -1
-  mElevationAccess: 2
+  mElevationAccess: 1
   mRoomType: 2
   mFloorLimiter: 0
   mFloorExcluder: 0

@@ -74,47 +74,39 @@ public class GenerationManager : MonoBehaviour
         // Find how many floors we have.
         int floorCount = 0;
 
-        foreach(GenBlock block in mGenBlocks)
+        // Clear any current gen blocks
+        floorCount = PrepareGenblocks();
+
+        // Clear our current floors
+        ClearFloors();
+
+        // Rebuild the floor heirarchy
+        BuildFloors(floorCount);
+
+        // Generate our map
+        GenerateMap();
+    }
+
+    private void BuildFloors(int numFloors)
+    {
+
+        for (int i = mFloorParents.Count; i < numFloors; i++)
         {
-            // Check to see we're not in another blocks space, if we are then delete us
-            for(int i = 0; i < mGenBlocks.Count; i++)
-            {
-                if(mGenBlocks[i] == block)
-                {
-                    continue;
-                }
+            GameObject newParent = new GameObject("Floor " + (i + 1).ToString());
+            newParent.transform.SetParent(mGenerationTarget.transform);
 
-                if(mGenBlocks[i].gameObject.transform.position == block.transform.position)
-                {
-                    DestroyImmediate(block);
-                    break;
-                }
-            }
-
-            if(block == null)
-            {
-                continue;
-            }
-
-            // Un-parent the GenBlock
-            block.transform.SetParent(mGenerationTarget.transform);
-
-            // Get our scene Height, we need to bump it by one because we're starting at 0.
-            int height = (int)block.gameObject.transform.position.y / mMaxGenBlockSize;
-
-            // Need to increase hight by 1 in our calculations to allot for generations where there is only 1 floor
-            if(height + 1 > floorCount)
-            {
-                floorCount = height + 1;
-            }
-
-            // Set the floor level of our block
-            block.mCurrentFloorLevel = height;
-
-            // If our block isn't locked down, wipe the blocks geometry
-            block.RemoveTerrain();
+            mFloorParents.Add(newParent);
         }
 
+        // Set our floor parent heights, this is mainly just for aesthetics, could be removed if we're hurting for cycles.
+        for (int i = 0; i < mFloorParents.Count; i++)
+        {
+            mFloorParents[i].transform.position = new Vector3(0, (i * mMaxGenBlockSize) - (mMaxGenBlockSize / 2), 0);
+        }
+    }
+
+    private void ClearFloors()
+    {
         // Reset the floor parents
         if (mFloorParents == null)
         {
@@ -130,29 +122,60 @@ public class GenerationManager : MonoBehaviour
 
             mFloorParents.Clear();
         }
+    }
 
-        for (int i = mFloorParents.Count; i < floorCount; i++)
+    // Prepares all Genblocks for generation, returns the number of floors
+    private int PrepareGenblocks()
+    {
+        int floors = 0;
+
+        foreach (GenBlock block in mGenBlocks)
         {
-            GameObject newParent = new GameObject("Floor " + (i + 1).ToString());
-            newParent.transform.SetParent(mGenerationTarget.transform);
+            // Check to see we're not in another blocks space, if we are then delete us
+            for (int i = 0; i < mGenBlocks.Count; i++)
+            {
+                if (mGenBlocks[i] == block)
+                {
+                    continue;
+                }
 
-            mFloorParents.Add(newParent);
+                if (mGenBlocks[i].gameObject.transform.position == block.transform.position)
+                {
+                    DestroyImmediate(block);
+                    break;
+                }
+            }
+
+            if (block == null)
+            {
+                continue;
+            }
+
+            // Un-parent the GenBlock
+            block.transform.SetParent(mGenerationTarget.transform);
+
+            // Get our scene Height, we need to bump it by one because we're starting at 0.
+            int height = (int)block.gameObject.transform.position.y / mMaxGenBlockSize;
+
+            // Need to increase hight by 1 in our calculations to allot for generations where there is only 1 floor
+            if (height + 1 > floors)
+            {
+                floors = height + 1;
+            }
+
+            // Set the floor level of our block
+            block.mCurrentFloorLevel = height;
+
+            // If our block isn't locked down, wipe the blocks geometry
+            block.RemoveTerrain();
         }
 
-        // Set our floor parent heights, this is mainly just for aesthetics, could be removed if we're hurting for cycles.
-        for(int i = 0; i < mFloorParents.Count; i++)
-        {
-            mFloorParents[i].transform.position = new Vector3(0, (i * mMaxGenBlockSize) - (mMaxGenBlockSize / 2), 0);
-        }
-
-        GenerateMap();
+        return floors;
     }
 
     private bool GenerateMap()
     {
         // Generate Map
-        int currentStairCount = 0;
-        GenBlock[] currentBlocks = null;
         foreach (GenBlock block in mGenBlocks)
         {
             // Don't generate the terrain for Isolated GenBlocks

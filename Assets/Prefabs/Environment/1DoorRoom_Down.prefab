@@ -719,7 +719,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mSpacialProperties: 4
-  mElevationAccess: 4
+  mElevationAccess: 2
   mRoomType: 1
   mFloorLimiter: 0
   mFloorExcluder: 0

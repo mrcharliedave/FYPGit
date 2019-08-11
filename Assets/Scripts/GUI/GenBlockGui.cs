@@ -50,14 +50,7 @@ public class GenBlockGui : Editor
 
         GUILayout.Space(5);
 
-        GUILayout.BeginHorizontal();
-        GenBlockLevelSpacialProperties prop = (GenBlockLevelSpacialProperties)EditorGUILayout.EnumPopup("Level Access", (GenBlockLevelSpacialProperties)serializedObject.FindProperty("mLevelAccess").enumValueIndex); //???
-        serializedObject.FindProperty("mLevelAccess").enumValueIndex = (int)prop;
-
-        GUILayout.Space(10);
-
-        serializedObject.FindProperty("mUseClutter").boolValue = GUILayout.Toggle(myBlock.mUseClutter, "Use Clutter in this Block");
-        GUILayout.EndHorizontal();
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("mLevelAccess"));
 
         serializedObject.ApplyModifiedProperties();
     }
