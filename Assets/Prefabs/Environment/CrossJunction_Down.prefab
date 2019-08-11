@@ -135,7 +135,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b828a689218ebd46bfd226b2b1d81d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mSpacialProperties: -1
+  mSpacialProperties: 47
   mElevationAccess: 2
   mRoomType: 2
   mFloorLimiter: 0

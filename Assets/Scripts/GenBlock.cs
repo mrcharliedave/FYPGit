@@ -13,6 +13,8 @@ public enum GenBlock2DSpacialProperties : int
     RIGHT   = (1 << 1),
     FORWARD = (1 << 2),
     BACK    = (1 << 3),
+    UP      = (1 << 4),
+    DOWN    = (1 << 5),
 }
 
 public enum GenBlockLevelSpacialProperties
