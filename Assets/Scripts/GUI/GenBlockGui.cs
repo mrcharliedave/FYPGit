@@ -48,10 +48,6 @@ public class GenBlockGui : Editor
             return;
         }
 
-        GUILayout.Space(5);
-
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("mLevelAccess"));
-
         serializedObject.ApplyModifiedProperties();
     }
 }

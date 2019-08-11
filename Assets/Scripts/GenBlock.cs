@@ -17,17 +17,9 @@ public enum GenBlock2DSpacialProperties : int
     DOWN    = (1 << 5),
 }
 
-public enum GenBlockLevelSpacialProperties
-{
-    NONE = 0,
-    UP = 1,
-    DOWN = 2
-}
-
 public struct SpacialData
 {
     public GenBlock2DSpacialProperties mProperties;
-    public GenBlockLevelSpacialProperties mLevelAccess;
     public bool mIsolated;
 }
 
@@ -51,9 +43,6 @@ public class GenBlock : MonoBehaviour
 
     [Header("General Settings")]
     public bool mLock;
-
-    [Tooltip("This block will specifically contain access stairs. Depending on this setting, the blocks above or below could be altered.")]
-    public GenBlockLevelSpacialProperties mLevelAccess = GenBlockLevelSpacialProperties.NONE;
 
     [Header("Clutter Settings")]
     public bool mOverideGlobalClutter;
@@ -227,26 +216,31 @@ public class GenBlock : MonoBehaviour
 
         // Grab our correct Room Pool
         List<GameObject> roomPool = new List<GameObject>();
-        switch (mSpacialData.mLevelAccess)
-        {
-            case GenBlockLevelSpacialProperties.NONE:
-                {
-                    roomPool = mGenerationManager.mEnvironmentDatabase.mRooms;
-                }
-                break;
-            case GenBlockLevelSpacialProperties.DOWN:
-                {
-                    roomPool = mGenerationManager.mEnvironmentDatabase.mDownAccessRooms;
-                }
-                break;
-            case GenBlockLevelSpacialProperties.UP:
-                {
-                    roomPool = mGenerationManager.mEnvironmentDatabase.mUpAccessRooms;
-                }
-                break;
-        }
 
-        for(int i = 0; i < roomPool.Count; i++)
+        // This needs to be replaced with essentially the deciding logic on whether or not we should use stairs
+        //         switch (mSpacialData.mLevelAccess)
+        //         {
+        //             case GenBlockLevelSpacialProperties.NONE:
+        //                 {
+        //                     roomPool = mGenerationManager.mEnvironmentDatabase.mRooms;
+        //                 }
+        //                 break;
+        //             case GenBlockLevelSpacialProperties.DOWN:
+        //                 {
+        //                     roomPool = mGenerationManager.mEnvironmentDatabase.mDownAccessRooms;
+        //                 }
+        //                 break;
+        //             case GenBlockLevelSpacialProperties.UP:
+        //                 {
+        //                     roomPool = mGenerationManager.mEnvironmentDatabase.mUpAccessRooms;
+        //                 }
+        //                 break;
+        //         }
+
+        // Use the base rooms for now
+        roomPool = mGenerationManager.mEnvironmentDatabase.mRooms;
+
+        for (int i = 0; i < roomPool.Count; i++)
         {
             Room room = roomPool[i].GetComponent<Room>();
 
