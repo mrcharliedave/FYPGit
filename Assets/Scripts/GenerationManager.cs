@@ -47,6 +47,10 @@ public class GenerationManager : MonoBehaviour
     
     public List<List<GenBlockSpacialProperties>> mRoomRotations;
 
+    /// <summary>
+    /// These are variables used for the Recursive Backtracker maze generation.
+    /// </summary>
+
     void Update()
     {
         if(mRoomRotations == null)

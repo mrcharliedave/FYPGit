@@ -20,6 +20,7 @@ public enum GenBlockSpacialProperties : int
 public struct SpacialData
 {
     public GenBlockSpacialProperties mProperties;
+    public Dictionary<GenBlockSpacialProperties, GenBlock> mNeighbours;
     public bool mIsolated;
 }
 
@@ -56,9 +57,6 @@ public class GenBlock : MonoBehaviour
     public int mCurrentFloorLevel;
 
     public SpacialData mSpacialData;
-
-    // Maybe set neighbours and do it this way??
-    private GenBlock[,,] mNeighbours;
 
     private void OnDestroy()
     {
@@ -125,26 +123,32 @@ public class GenBlock : MonoBehaviour
         if (Physics.Raycast(transform.position, Vector3.left, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
             mSpacialData.mProperties |= GenBlockSpacialProperties.LEFT;
+            mSpacialData.mNeighbours.Add(GenBlockSpacialProperties.LEFT, hit.collider.gameObject.GetComponent<GenBlock>());
         }
         if (Physics.Raycast(transform.position, Vector3.right, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
             mSpacialData.mProperties |= GenBlockSpacialProperties.RIGHT;
+            mSpacialData.mNeighbours.Add(GenBlockSpacialProperties.RIGHT, hit.collider.gameObject.GetComponent<GenBlock>());
         }
         if (Physics.Raycast(transform.position, Vector3.forward, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
             mSpacialData.mProperties |= GenBlockSpacialProperties.FORWARD;
+            mSpacialData.mNeighbours.Add(GenBlockSpacialProperties.FORWARD, hit.collider.gameObject.GetComponent<GenBlock>());
         }
         if (Physics.Raycast(transform.position, Vector3.back, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
             mSpacialData.mProperties |= GenBlockSpacialProperties.BACK;
+            mSpacialData.mNeighbours.Add(GenBlockSpacialProperties.BACK, hit.collider.gameObject.GetComponent<GenBlock>());
         }
         if (Physics.Raycast(transform.position, Vector3.up, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
             mSpacialData.mProperties |= GenBlockSpacialProperties.UP;
+            mSpacialData.mNeighbours.Add(GenBlockSpacialProperties.UP, hit.collider.gameObject.GetComponent<GenBlock>());
         }
         if (Physics.Raycast(transform.position, Vector3.down, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
             mSpacialData.mProperties |= GenBlockSpacialProperties.DOWN;
+            mSpacialData.mNeighbours.Add(GenBlockSpacialProperties.DOWN, hit.collider.gameObject.GetComponent<GenBlock>());
         }
 
         // Set isolated if we are
