@@ -7,7 +7,7 @@ using UnityEditor;
 //          they will be responsible for managing themselves and reporting to the Generation Manager
 
 [System.Flags]
-public enum GenBlock2DSpacialProperties : int
+public enum GenBlockSpacialProperties : int
 {
     LEFT    = (1 << 0),
     RIGHT   = (1 << 1),
@@ -19,7 +19,7 @@ public enum GenBlock2DSpacialProperties : int
 
 public struct SpacialData
 {
-    public GenBlock2DSpacialProperties mProperties;
+    public GenBlockSpacialProperties mProperties;
     public bool mIsolated;
 }
 
@@ -44,6 +44,8 @@ public class GenBlock : MonoBehaviour
     [Header("General Settings")]
     public bool mLock;
 
+    public bool mDrawSpacialDataGizmos = true;
+
     [Header("Clutter Settings")]
     public bool mOverideGlobalClutter;
 
@@ -54,8 +56,6 @@ public class GenBlock : MonoBehaviour
     public int mCurrentFloorLevel;
 
     public SpacialData mSpacialData;
-
-    private List<List<GenBlock2DSpacialProperties>> mRoomRotations;
 
     // Maybe set neighbours and do it this way??
     private GenBlock[,,] mNeighbours;
@@ -79,11 +79,6 @@ public class GenBlock : MonoBehaviour
         if(!mGenerationManager)
         {
             mGenerationManager = GameObject.FindObjectOfType<GenerationManager>();
-        }
-
-        if(mRoomRotations == null)
-        {
-            SetupRoomRotations();
         }
 
         // Run our block through its required updates
@@ -129,20 +124,27 @@ public class GenBlock : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(transform.position, Vector3.left, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
-            mSpacialData.mProperties |= GenBlock2DSpacialProperties.LEFT;
+            mSpacialData.mProperties |= GenBlockSpacialProperties.LEFT;
         }
         if (Physics.Raycast(transform.position, Vector3.right, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
-            mSpacialData.mProperties |= GenBlock2DSpacialProperties.RIGHT;
+            mSpacialData.mProperties |= GenBlockSpacialProperties.RIGHT;
         }
         if (Physics.Raycast(transform.position, Vector3.forward, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
-            mSpacialData.mProperties |= GenBlock2DSpacialProperties.FORWARD;
+            mSpacialData.mProperties |= GenBlockSpacialProperties.FORWARD;
         }
         if (Physics.Raycast(transform.position, Vector3.back, out hit, mGenerationManager.mGridSize / 2, layerMask))
         {
-            mSpacialData.mProperties |= GenBlock2DSpacialProperties.BACK;
-            hit.transform.GetComponent<GenBlock>();
+            mSpacialData.mProperties |= GenBlockSpacialProperties.BACK;
+        }
+        if (Physics.Raycast(transform.position, Vector3.up, out hit, mGenerationManager.mGridSize / 2, layerMask))
+        {
+            mSpacialData.mProperties |= GenBlockSpacialProperties.UP;
+        }
+        if (Physics.Raycast(transform.position, Vector3.down, out hit, mGenerationManager.mGridSize / 2, layerMask))
+        {
+            mSpacialData.mProperties |= GenBlockSpacialProperties.DOWN;
         }
 
         // Set isolated if we are
@@ -160,44 +162,6 @@ public class GenBlock : MonoBehaviour
         {
             DestroyImmediate(child.gameObject);
         }
-    }
-
-    private void SetupRoomRotations()
-    {
-        // Add rotations in a clockwise manner
-        mRoomRotations = new List<List<GenBlock2DSpacialProperties>>();
-        List<GenBlock2DSpacialProperties> OneFlatConnection = new List<GenBlock2DSpacialProperties>();
-        List<GenBlock2DSpacialProperties> LineConnection = new List<GenBlock2DSpacialProperties>();
-        List<GenBlock2DSpacialProperties> TwoFlatConnection = new List<GenBlock2DSpacialProperties>();
-        List<GenBlock2DSpacialProperties> ThreeFlatConnection = new List<GenBlock2DSpacialProperties>();
-
-        // If we have 1 entrance, the room matches, just apply a rotation, 4 types
-        OneFlatConnection.Add(GenBlock2DSpacialProperties.FORWARD);
-        OneFlatConnection.Add(GenBlock2DSpacialProperties.RIGHT);
-        OneFlatConnection.Add(GenBlock2DSpacialProperties.BACK);
-        OneFlatConnection.Add(GenBlock2DSpacialProperties.LEFT);
-
-        // If we have 2 entrances
-        // If the entrances are adjacent, rotate, 2 types
-        LineConnection.Add(GenBlock2DSpacialProperties.FORWARD | GenBlock2DSpacialProperties.BACK);
-        LineConnection.Add(GenBlock2DSpacialProperties.LEFT | GenBlock2DSpacialProperties.RIGHT);
-
-        // If entrances are next to each other, rotate, 4 types
-        TwoFlatConnection.Add(GenBlock2DSpacialProperties.FORWARD | GenBlock2DSpacialProperties.RIGHT);
-        TwoFlatConnection.Add(GenBlock2DSpacialProperties.RIGHT | GenBlock2DSpacialProperties.BACK);
-        TwoFlatConnection.Add(GenBlock2DSpacialProperties.BACK | GenBlock2DSpacialProperties.LEFT);
-        TwoFlatConnection.Add(GenBlock2DSpacialProperties.LEFT | GenBlock2DSpacialProperties.FORWARD);
-
-        // if we have 3 entrances are next to each other, rotate, 4 types
-        ThreeFlatConnection.Add(GenBlock2DSpacialProperties.FORWARD | GenBlock2DSpacialProperties.RIGHT | GenBlock2DSpacialProperties.BACK);
-        ThreeFlatConnection.Add(GenBlock2DSpacialProperties.RIGHT | GenBlock2DSpacialProperties.BACK | GenBlock2DSpacialProperties.LEFT);
-        ThreeFlatConnection.Add(GenBlock2DSpacialProperties.BACK | GenBlock2DSpacialProperties.LEFT | GenBlock2DSpacialProperties.FORWARD);
-        ThreeFlatConnection.Add(GenBlock2DSpacialProperties.LEFT | GenBlock2DSpacialProperties.FORWARD | GenBlock2DSpacialProperties.RIGHT);
-
-        mRoomRotations.Add(OneFlatConnection);
-        mRoomRotations.Add(LineConnection);
-        mRoomRotations.Add(TwoFlatConnection);
-        mRoomRotations.Add(ThreeFlatConnection);
     }
 
     public RoomAndRotation GetRandomRoom()
@@ -251,8 +215,22 @@ public class GenBlock : MonoBehaviour
             }
             else
             {
+                // Strip up and down properties
+                GenBlockSpacialProperties ourRoom = mSpacialData.mProperties;
+                GenBlockSpacialProperties candidate = room.mSpacialProperties;
+                if ((ourRoom & GenBlockSpacialProperties.UP) != 0 && (candidate & GenBlockSpacialProperties.UP) != 0)
+                {
+                    ourRoom &= ~GenBlockSpacialProperties.UP;
+                    candidate &= ~GenBlockSpacialProperties.UP;
+                }
 
-                int degrees = FindRoomRotations(mSpacialData.mProperties, room.mSpacialProperties);
+                if ((ourRoom & GenBlockSpacialProperties.DOWN) != 0 && (candidate & GenBlockSpacialProperties.DOWN) != 0)
+                {
+                    ourRoom &= ~GenBlockSpacialProperties.DOWN;
+                    candidate &= ~GenBlockSpacialProperties.DOWN;
+                }
+
+                int degrees = FindRoomRotations(ourRoom, candidate);
                 if (degrees > int.MinValue)
                 {
                     rooms.Add(new RoomAndRotation(room.gameObject, degrees));
@@ -264,20 +242,20 @@ public class GenBlock : MonoBehaviour
     }
 
     // Returns an int that details how much we have to rotate by if we have a match. If the min int is returned, no match.
-    private int FindRoomRotations(GenBlock2DSpacialProperties room, GenBlock2DSpacialProperties prefab)
+    private int FindRoomRotations(GenBlockSpacialProperties room, GenBlockSpacialProperties prefab)
     {
         // Check each pattern
-        for(int i = 0; i < mRoomRotations.Count; i++)
+        for(int i = 0; i < mGenerationManager.mRoomRotations.Count; i++)
         {
-            for(int j = 0; j < mRoomRotations[i].Count; j++)
+            for(int j = 0; j < mGenerationManager.mRoomRotations[i].Count; j++)
             {
                 // We have found our room, now we need to find our rotation
-                if (mRoomRotations[i][j] == room)
+                if (mGenerationManager.mRoomRotations[i][j] == room)
                 {
                     // Check for a match
-                    for (int k = 0; k < mRoomRotations[i].Count; k++)
+                    for (int k = 0; k < mGenerationManager.mRoomRotations[i].Count; k++)
                     {
-                        if (mRoomRotations[i][k] == prefab)
+                        if (mGenerationManager.mRoomRotations[i][k] == prefab)
                         {
                             // Because our rotations are set up to from "forward" in a clockwise motion, our rotation angle is the difference between our two rooms multiplied by 90.
                             return (j - k) * 90;
@@ -308,5 +286,41 @@ public class GenBlock : MonoBehaviour
         }
 
         Gizmos.DrawWireCube(transform.position, new Vector3(transform.localScale.x, transform.localScale.y, transform.localScale.z));
+
+        // This draws a Cyan line out towards where there is a connection with another GenBlock
+        if(mDrawSpacialDataGizmos)
+        {
+            Gizmos.color = Color.cyan;
+
+            if ((mSpacialData.mProperties & GenBlockSpacialProperties.FORWARD) != 0)
+            {
+                Gizmos.DrawLine(transform.position, transform.position + Vector3.forward / 2);
+            }
+
+            if ((mSpacialData.mProperties & GenBlockSpacialProperties.BACK) != 0)
+            {
+                Gizmos.DrawLine(transform.position, transform.position - Vector3.forward / 2);
+            }
+
+            if ((mSpacialData.mProperties & GenBlockSpacialProperties.LEFT) != 0)
+            {
+                Gizmos.DrawLine(transform.position, transform.position + Vector3.left / 2);
+            }
+
+            if ((mSpacialData.mProperties & GenBlockSpacialProperties.RIGHT) != 0)
+            {
+                Gizmos.DrawLine(transform.position, transform.position + Vector3.right / 2);
+            }
+
+            if ((mSpacialData.mProperties & GenBlockSpacialProperties.UP) != 0)
+            {
+                Gizmos.DrawLine(transform.position, transform.position + Vector3.up / 2);
+            }
+
+            if ((mSpacialData.mProperties & GenBlockSpacialProperties.DOWN) != 0)
+            {
+                Gizmos.DrawLine(transform.position, transform.position + Vector3.down / 2);
+            }
+        }
     }
 }

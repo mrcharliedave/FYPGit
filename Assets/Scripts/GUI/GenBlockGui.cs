@@ -34,19 +34,21 @@ public class GenBlockGui : Editor
 
         GUILayout.Space(5);
 
+        // Lock Bool
         GUI.backgroundColor = serializedObject.FindProperty("mLock").boolValue ? Color.red : Color.green; // Set the colour depending on our locked status
         if (GUILayout.Button(serializedObject.FindProperty("mLock").boolValue ? "Unlock GenBlock Terrain" : "Lock Genblock Terrain"))
         {
             serializedObject.FindProperty("mLock").boolValue = !serializedObject.FindProperty("mLock").boolValue;
         }
-        GUI.backgroundColor = Color.white; // Reset the GUI Colour
 
-        if (serializedObject.FindProperty("mLock").boolValue)
+        // Gizmo Bool
+        GUI.backgroundColor = serializedObject.FindProperty("mDrawSpacialDataGizmos").boolValue ? Color.red : Color.green; // Set the colour depending on our locked status
+        if (GUILayout.Button(serializedObject.FindProperty("mDrawSpacialDataGizmos").boolValue ? "Hide Spacial Data Gizmos" : "Draw Spacial Data Gizmos"))
         {
-            // Don't show our customisation options if the block is locked
-            serializedObject.ApplyModifiedProperties();
-            return;
+            serializedObject.FindProperty("mDrawSpacialDataGizmos").boolValue = !serializedObject.FindProperty("mDrawSpacialDataGizmos").boolValue;
         }
+
+        GUI.backgroundColor = Color.white; // Reset the GUI Colour
 
         serializedObject.ApplyModifiedProperties();
     }

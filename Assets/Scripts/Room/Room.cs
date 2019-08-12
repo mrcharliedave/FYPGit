@@ -17,7 +17,7 @@ public class Room : MonoBehaviour
 
     [EnumFlag]
     [SerializeField]
-    public GenBlock2DSpacialProperties mSpacialProperties;
+    public GenBlockSpacialProperties mSpacialProperties;
     public RoomTypes mRoomType;
     public int mFloorLimiter; // The piece is limited to use on this floor (set to 0 to be ignored)
     public int mFloorExcluder; // The piece is limited to use on on ever floor bar this one (set to 0 to be ignored)

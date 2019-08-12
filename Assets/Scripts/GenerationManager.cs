@@ -36,14 +36,24 @@ public class GenerationManager : MonoBehaviour
     public bool mClearGenBlocks;
     public bool mClearTerrain;
 
+    /// <summary>
+    ///  Items below this line are specifically for internal processes. Not to be displayed in the custom inspector.
+    /// </summary>
     private GameObject mEnvironmentParent;
 
     private List<GameObject> mFloorParents;
 
     private RoomGenerationInfo[,,] mGridRoomInfo;
     
+    public List<List<GenBlockSpacialProperties>> mRoomRotations;
+
     void Update()
     {
+        if(mRoomRotations == null)
+        {
+            SetupRoomRotations();
+        }
+
         if(mGenerate)
         {
             mGenerate = false;
@@ -201,6 +211,45 @@ public class GenerationManager : MonoBehaviour
         }
 
         return true;
+    }
+
+    private void SetupRoomRotations()
+    {
+        // Add rotations in a clockwise manner
+        mRoomRotations = new List<List<GenBlockSpacialProperties>>();
+        List<GenBlockSpacialProperties> OneFlatConnection = new List<GenBlockSpacialProperties>();
+        List<GenBlockSpacialProperties> LineConnection = new List<GenBlockSpacialProperties>();
+        List<GenBlockSpacialProperties> TwoFlatConnection = new List<GenBlockSpacialProperties>();
+        List<GenBlockSpacialProperties> ThreeFlatConnection = new List<GenBlockSpacialProperties>();
+
+        // If we have 1 entrance, the room matches, just apply a rotation, 4 types
+        OneFlatConnection.Add(GenBlockSpacialProperties.FORWARD);
+        OneFlatConnection.Add(GenBlockSpacialProperties.RIGHT);
+        OneFlatConnection.Add(GenBlockSpacialProperties.BACK);
+        OneFlatConnection.Add(GenBlockSpacialProperties.LEFT);
+
+        // If we have 2 entrances
+        // If the entrances are adjacent, rotate, 2 types
+        LineConnection.Add(GenBlockSpacialProperties.FORWARD | GenBlockSpacialProperties.BACK);
+        LineConnection.Add(GenBlockSpacialProperties.LEFT | GenBlockSpacialProperties.RIGHT);
+
+        // If entrances are next to each other, rotate, 4 types
+        TwoFlatConnection.Add(GenBlockSpacialProperties.FORWARD | GenBlockSpacialProperties.RIGHT);
+        TwoFlatConnection.Add(GenBlockSpacialProperties.RIGHT | GenBlockSpacialProperties.BACK);
+        TwoFlatConnection.Add(GenBlockSpacialProperties.BACK | GenBlockSpacialProperties.LEFT);
+        TwoFlatConnection.Add(GenBlockSpacialProperties.LEFT | GenBlockSpacialProperties.FORWARD);
+
+        // if we have 3 entrances are next to each other, rotate, 4 types
+        ThreeFlatConnection.Add(GenBlockSpacialProperties.FORWARD | GenBlockSpacialProperties.RIGHT | GenBlockSpacialProperties.BACK);
+        ThreeFlatConnection.Add(GenBlockSpacialProperties.RIGHT | GenBlockSpacialProperties.BACK | GenBlockSpacialProperties.LEFT);
+        ThreeFlatConnection.Add(GenBlockSpacialProperties.BACK | GenBlockSpacialProperties.LEFT | GenBlockSpacialProperties.FORWARD);
+        ThreeFlatConnection.Add(GenBlockSpacialProperties.LEFT | GenBlockSpacialProperties.FORWARD | GenBlockSpacialProperties.RIGHT);
+
+        // Add all of our rotations to our list of lists
+        mRoomRotations.Add(OneFlatConnection);
+        mRoomRotations.Add(LineConnection);
+        mRoomRotations.Add(TwoFlatConnection);
+        mRoomRotations.Add(ThreeFlatConnection);
     }
 
     private void AddGenBlock()
