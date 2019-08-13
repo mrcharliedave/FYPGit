@@ -116,6 +116,7 @@ public class GenBlock : MonoBehaviour
     {
         // Reset spacial data
         mSpacialData.mProperties = 0;
+        mSpacialData.mNeighbours = new Dictionary<GenBlockSpacialProperties, GenBlock>();
 
         // Cast out to find neighbours on the correct collision layer.
         int layerMask = 1 << 9;
