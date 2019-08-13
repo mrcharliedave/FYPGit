@@ -13,6 +13,7 @@ public class GenerationManager : MonoBehaviour
 
     // Project Settings
     public bool mGenerate;
+    public bool mUseMaze = true;
     public GameObject mGenerationTarget;
     public EnvironmentData mEnvironmentDatabase;
 
@@ -39,17 +40,11 @@ public class GenerationManager : MonoBehaviour
     /// <summary>
     ///  Items below this line are specifically for internal processes. Not to be displayed in the custom inspector.
     /// </summary>
-    private GameObject mEnvironmentParent;
-
-    private List<GameObject> mFloorParents;
-
-    private RoomGenerationInfo[,,] mGridRoomInfo;
-    
     public List<List<GenBlockSpacialProperties>> mRoomRotations;
 
-    /// <summary>
-    /// These are variables used for the Recursive Backtracker maze generation.
-    /// </summary>
+    private GameObject mEnvironmentParent;
+    private List<GameObject> mFloorParents;
+    
 
     void Update()
     {
@@ -94,7 +89,7 @@ public class GenerationManager : MonoBehaviour
         // Clear our current floors
         ClearFloors();
 
-        // Rebuild the floor heirarchy
+        // Rebuild the floor hierarchy
         BuildFloors(floorCount);
 
         // Generate our map
@@ -189,32 +184,168 @@ public class GenerationManager : MonoBehaviour
 
     private bool GenerateMap()
     {
-        // Generate Map
-        foreach (GenBlock block in mGenBlocks)
+        // Find a GenBlock on the lowest level
+        GenBlock startBlock = null;
+        foreach(GenBlock block in mGenBlocks)
         {
             // Don't generate the terrain for Isolated GenBlocks
             if (block.mSpacialData.mIsolated)
             {
+                mGenBlocks.Remove(block);
+                DestroyImmediate(block);
                 continue;
             }
 
-            block.transform.SetParent(mFloorParents[block.mCurrentFloorLevel].transform);
-            RoomAndRotation room = block.GetRandomRoom();
+            // Reset each blocks data
+            block.mSpacialData.mDeadEnd = false;
+            block.mSpacialData.mVisited = false;
+            block.mSpacialData.mUsedPaths = 0;
 
-            if (room.mRoom != null)
+            // Find if we're the start block
+            if (!startBlock)
             {
-                GameObject roomObject = Instantiate(room.mRoom);
-                roomObject.transform.parent = block.transform;
-                roomObject.transform.localPosition = Vector3.zero;
-
-                if (room.mRotateOnY != 0)
-                {
-                    roomObject.transform.rotation *= Quaternion.Euler(0, room.mRotateOnY, 0);
-                }
+                startBlock = block;
+            }
+            else if (block.transform.position.y < startBlock.transform.position.y)
+            {
+                startBlock = block;
             }
         }
 
+        if(mUseMaze)
+        {
+            GenerateMaze(startBlock);
+        }
+        else
+        {
+            GenerateOpenPlan();
+        }
+
         return true;
+    }
+
+    // Generate our terrain using a backwards recursive search to define the paths.
+    private void GenerateMaze(GenBlock startBlock)
+    {
+        // Begin Recursive Backtracking
+        Stack<GenBlock> blockStack = new Stack<GenBlock>();
+        blockStack.Push(startBlock);
+        while (blockStack.Count > 0)
+        {
+            // Pop our current block and process its spacial data
+            GenBlock block = blockStack.Pop();
+            if (!block.mSpacialData.mDeadEnd)
+            {
+                // Now that the block is popped, we have visited here
+                block.mSpacialData.mVisited = true;
+
+                // Check for available directions
+                var candidatesDirections = GetViableDirections(block);
+                if (candidatesDirections.Count > 0)
+                {
+                    // Get a random Direction
+                    var direction = candidatesDirections[Random.Range(0, candidatesDirections.Count - 1)];
+
+                    // Set our used path in this direction
+                    block.mSpacialData.mUsedPaths |= direction;
+
+                    // Set our new rooms used path in the opposite direction
+                    block.mSpacialData.mNeighbours[direction].mSpacialData.mUsedPaths |= GetOppositeDirection(direction);
+
+                    // Add our current block and then our next block to the stack
+                    blockStack.Push(block);
+                    blockStack.Push(block.mSpacialData.mNeighbours[direction]);
+                }
+                else
+                {
+                    // We have nowhere to go, so we are a dead end
+                    block.mSpacialData.mDeadEnd = true;
+                }
+            }
+
+            // We're a dead end, so generate our terrain
+            if (block.mSpacialData.mDeadEnd)
+            {
+                GenerateBlockTerrain(block);
+            }
+        }
+    }
+
+    private void GenerateOpenPlan()
+    {
+        // Generate a path in every available direction
+        foreach (GenBlock block in mGenBlocks)
+        {
+            block.mSpacialData.mUsedPaths = block.mSpacialData.mProperties;
+            GenerateBlockTerrain(block);
+        }
+    }
+
+    private void GenerateBlockTerrain(GenBlock block)
+    {
+        block.transform.SetParent(mFloorParents[block.mCurrentFloorLevel].transform);
+        RoomAndRotation room = block.GetRandomRoom();
+
+        if (room.mRoom != null)
+        {
+            GameObject roomObject = Instantiate(room.mRoom);
+            roomObject.transform.parent = block.transform;
+            roomObject.transform.localPosition = Vector3.zero;
+
+            if (room.mRotateOnY != 0)
+            {
+                roomObject.transform.rotation *= Quaternion.Euler(0, room.mRotateOnY, 0);
+            }
+        }
+    }
+    
+    private GenBlockSpacialProperties GetOppositeDirection(GenBlockSpacialProperties direction)
+    {
+        switch (direction)
+        {
+            case (GenBlockSpacialProperties.FORWARD):
+                {
+                    return GenBlockSpacialProperties.BACK;
+                }
+            case (GenBlockSpacialProperties.BACK):
+                {
+                    return GenBlockSpacialProperties.FORWARD;
+                }
+            case (GenBlockSpacialProperties.LEFT):
+                {
+                    return GenBlockSpacialProperties.RIGHT;
+                }
+            case (GenBlockSpacialProperties.RIGHT):
+                {
+                    return GenBlockSpacialProperties.LEFT;
+                }
+            case (GenBlockSpacialProperties.UP):
+                {
+                    return GenBlockSpacialProperties.DOWN;
+                }
+            case (GenBlockSpacialProperties.DOWN):
+                {
+                    return GenBlockSpacialProperties.UP;
+                }
+        }
+
+        return 0;
+
+    }
+
+    // Finds directions for the recursive search, only for rooms that haven't already been visited
+    private List<GenBlockSpacialProperties> GetViableDirections(GenBlock block)
+    {
+        List<GenBlockSpacialProperties> directions = new List<GenBlockSpacialProperties>();
+        foreach (var pair in block.mSpacialData.mNeighbours)
+        {
+            if(!pair.Value.mSpacialData.mVisited && !pair.Value.mSpacialData.mDeadEnd)
+            {
+                directions.Add(pair.Key);
+            }
+        }
+
+        return directions;
     }
 
     private void SetupRoomRotations()

@@ -20,8 +20,11 @@ public enum GenBlockSpacialProperties : int
 public struct SpacialData
 {
     public GenBlockSpacialProperties mProperties;
+    public GenBlockSpacialProperties mUsedPaths;
     public Dictionary<GenBlockSpacialProperties, GenBlock> mNeighbours;
     public bool mIsolated;
+    public bool mDeadEnd;
+    public bool mVisited;
 }
 
 public struct RoomAndRotation
@@ -112,7 +115,7 @@ public class GenBlock : MonoBehaviour
         transform.localPosition = pos;
     }
 
-    private void UpdateSpacialProperties()
+    public void UpdateSpacialProperties()
     {
         // Reset spacial data
         mSpacialData.mProperties = 0;
@@ -177,43 +180,15 @@ public class GenBlock : MonoBehaviour
 
     public List<RoomAndRotation> GetAvailableRooms()
     {
-        // Refresh our spacial properties before generation
-        UpdateSpacialProperties();
-
         // Set up our room list
         List<RoomAndRotation> rooms = new List<RoomAndRotation>();
 
-        // Grab our correct Room Pool
-        List<GameObject> roomPool = new List<GameObject>();
-
-        // This needs to be replaced with essentially the deciding logic on whether or not we should use stairs
-        //         switch (mSpacialData.mLevelAccess)
-        //         {
-        //             case GenBlockLevelSpacialProperties.NONE:
-        //                 {
-        //                     roomPool = mGenerationManager.mEnvironmentDatabase.mRooms;
-        //                 }
-        //                 break;
-        //             case GenBlockLevelSpacialProperties.DOWN:
-        //                 {
-        //                     roomPool = mGenerationManager.mEnvironmentDatabase.mDownAccessRooms;
-        //                 }
-        //                 break;
-        //             case GenBlockLevelSpacialProperties.UP:
-        //                 {
-        //                     roomPool = mGenerationManager.mEnvironmentDatabase.mUpAccessRooms;
-        //                 }
-        //                 break;
-        //         }
-
-        // Use the base rooms for now
-        roomPool = mGenerationManager.mEnvironmentDatabase.mRooms;
-
-        for (int i = 0; i < roomPool.Count; i++)
+        // Loop through to find candidate rooms
+        for (int i = 0; i < mGenerationManager.mEnvironmentDatabase.mRooms.Count; i++)
         {
-            Room room = roomPool[i].GetComponent<Room>();
+            Room room = mGenerationManager.mEnvironmentDatabase.mRooms[i].GetComponent<Room>();
 
-            if (room.mSpacialProperties == mSpacialData.mProperties)
+            if (room.mSpacialProperties == mSpacialData.mUsedPaths)
             {
                 // If a room matches our spacial data perfectly, add it to the list
                 rooms.Add(new RoomAndRotation(room.gameObject, 0));
@@ -221,7 +196,8 @@ public class GenBlock : MonoBehaviour
             else
             {
                 // Strip up and down properties
-                GenBlockSpacialProperties ourRoom = mSpacialData.mProperties;
+                // TODO - This could probably be moved in to the rotation calculation itself to help cut down on code clutter.
+                GenBlockSpacialProperties ourRoom = mSpacialData.mUsedPaths;
                 GenBlockSpacialProperties candidate = room.mSpacialProperties;
                 if ((ourRoom & GenBlockSpacialProperties.UP) != 0 && (candidate & GenBlockSpacialProperties.UP) != 0)
                 {

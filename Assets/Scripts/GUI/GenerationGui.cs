@@ -56,6 +56,12 @@ public class GenerationGui : Editor
         GUILayout.Label("Environment Data", body);
         serializedObject.FindProperty("mEnvironmentDatabase").objectReferenceValue = (EnvironmentData)EditorGUILayout.ObjectField(manager.mEnvironmentDatabase, typeof(EnvironmentData), false);
         GUILayout.EndHorizontal();
+        GUILayout.Space(2.5f);
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Use Maze Generation", body);
+        serializedObject.FindProperty("mUseMaze").boolValue = EditorGUILayout.Toggle(serializedObject.FindProperty("mUseMaze").boolValue);
+        GUILayout.EndHorizontal();
         GUILayout.Space(10);
 
         GUI.backgroundColor = Color.green;

@@ -42,15 +42,16 @@ public class Export : MonoBehaviour
                     // Get Terrain
                     if(block.childCount > 0)
                     {
-                        Transform terrain = block.GetChild(0);
-
                         // Re parent the geometry from the GenBlock to the Floor
-                        terrain.parent = floor;
-
-                        foreach (Room roomScript in terrain.GetComponentsInChildren<Room>())
+                        foreach (Transform room in block.transform)
                         {
-                            // Remove the "Room" scripts from the terrain
-                            DestroyImmediate(roomScript);
+                            room.parent = floor;
+
+                            foreach (Room roomScript in room.GetComponentsInChildren<Room>())
+                            {
+                                // Remove the "Room" scripts from the terrain
+                                DestroyImmediate(roomScript);
+                            }
                         }
                     }
 
